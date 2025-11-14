@@ -83,7 +83,7 @@ export default function Home(): JSX.Element {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="min-h-screen relative overflow-hidden"
+          className="min-h-screen relative overflow-x-hidden"
           style={{
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #e94560 100%)'
           }}

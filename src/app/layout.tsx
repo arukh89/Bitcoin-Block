@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { GameProvider } from '@/context/GameContext'
 import FarcasterWrapper from "@/components/FarcasterWrapper";
 import FarcasterMetaOverride from "@/components/FarcasterMetaOverride";
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+  display: 'swap',
 })
 
 const geistMono = Geist_Mono({
@@ -41,9 +42,7 @@ export default function RootLayout({
       <head>
         <meta property="fc:frame" content={JSON.stringify(farcasterFrameConfig)} />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.className} ${geistMono.variable} antialiased`}>
         <FarcasterMetaOverride />
         <GameProvider>
           <FarcasterWrapper>
