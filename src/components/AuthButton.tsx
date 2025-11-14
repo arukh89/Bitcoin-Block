@@ -7,6 +7,7 @@ import { useGame } from '@/context/GameContext'
 import { motion } from 'framer-motion'
 import type { User } from '@/types/game'
 import sdk from '@farcaster/miniapp-sdk'
+import { isAdminFid } from '@/context/GameContext'
 
 export function AuthButton(): JSX.Element {
   const { user, setUser } = useGame()
@@ -16,31 +17,29 @@ export function AuthButton(): JSX.Element {
   const handleConnect = async (): Promise<void> => {
     try {
       setLoading(true)
-      
-      // Request wallet connection using Farcaster miniapp SDK
-      const wallet = await sdk.wallet.ethProvider.request({
-        method: 'eth_requestAccounts'
-      }) as string[]
-
-      if (!wallet || wallet.length === 0) {
-        throw new Error('No wallet connected')
-      }
-
-      const address = wallet[0]
-      
-      // Get user context from Farcaster
+      // Ensure Farcaster SDK is ready and fetch context (no wallet request)
+      await sdk.actions.ready()
       const context = await sdk.context
 
+      if (!context.user) {
+        throw new Error('Farcaster user context not available')
+      }
+
+      const fid = context.user.fid
+      const addressHex = '0x' + fid.toString(16).padStart(40, '0')
+      const admin = isAdminFid(fid)
+
       const userData: User = {
-        address: address,
-        username: context.user.username || address.slice(0, 8),
-        displayName: context.user.displayName || address.slice(0, 8),
-        pfpUrl: context.user.pfpUrl || ''
+        address: addressHex,
+        username: context.user.username || `user${fid}`,
+        displayName: context.user.displayName || context.user.username || `user${fid}`,
+        pfpUrl: context.user.pfpUrl || '',
+        isAdmin: admin
       }
 
       setUser(userData)
     } catch (error) {
-      console.error('Failed to connect wallet:', error)
+      console.error('Failed to initialize Farcaster user:', error)
     } finally {
       setLoading(false)
     }

@@ -167,8 +167,9 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
             adminFids: ADMIN_FIDS
           })
           
+          const addressHex = '0x' + fid.toString(16).padStart(40, '0')
           const farcasterUser: User = {
-            address: `fid-${fid}`,
+            address: addressHex,
             username: context.user.username || `user${fid}`,
             displayName: context.user.displayName || context.user.username || 'Anonymous',
             pfpUrl: context.user.pfpUrl || 'https://i.imgur.com/placeholder.jpg',
@@ -525,19 +526,88 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
     }
   }, [client, connected])
 
-  // Auto-close rounds when end time is reached
+  // Auto-close round when target block is mined (via mempool.space)
   useEffect(() => {
     if (!activeRound || !client || !connected) return
+    if (activeRound.status !== 'open') return
+    if (!activeRound.blockNumber) return
 
-    const checkRoundEnd = (): void => {
-      const now = Date.now()
-      if (activeRound.status === 'open' && now >= activeRound.endTime) {
-        endRound(activeRound.id).catch(console.error)
+    let cancelled = false
+    const target = activeRound.blockNumber
+    const roundRef = activeRound
+
+    const checkBlock = async (): Promise<boolean> => {
+      try {
+        const res = await fetch(`/api/mempool?action=block-hash-by-height&height=${target}`)
+        return res.ok
+      } catch {
+        return false
       }
     }
 
-    const interval = setInterval(checkRoundEnd, 1000)
-    return () => clearInterval(interval)
+    const tick = async (): Promise<void> => {
+      if (cancelled) return
+      const found = await checkBlock()
+      if (found) {
+        try {
+          // 1) End the round first
+          await endRound(roundRef.id)
+          
+          // 2) Fetch results from mempool.space
+          const bh = await fetch(`/api/mempool?action=block-hash-by-height&height=${target}`)
+          if (!bh.ok) throw new Error('Failed to fetch block hash')
+          const blockHash = await bh.text()
+
+          const tx = await fetch(`/api/mempool?action=block-txids&blockHash=${blockHash}`)
+          if (!tx.ok) throw new Error('Failed to fetch txids')
+          const txids = (await tx.json()) as string[]
+          const actualTxCount = txids.length
+
+          // 3) Compute winner from existing guesses
+          const roundGuesses = guesses.filter(g => g.roundId === roundRef.id)
+          if (roundGuesses.length > 0) {
+            const sorted = [...roundGuesses].sort((a, b) => {
+              const da = Math.abs(a.guess - actualTxCount)
+              const db = Math.abs(b.guess - actualTxCount)
+              if (da !== db) return da - db
+              return a.submittedAt - b.submittedAt
+            })
+            const winner = sorted[0]
+
+            // 4) Persist results
+            await updateRoundResult(roundRef.id, actualTxCount, blockHash, winner.address)
+
+            // 5) Announce to Global Chat
+            await addChatMessage({
+              id: String(Date.now()),
+              roundId: 'global',
+              address: winner.address,
+              username: winner.username,
+              message: `👑 Winner: @${winner.username} — guess ${winner.guess.toLocaleString()} vs actual ${actualTxCount.toLocaleString()} tx • block #${target}`,
+              pfpUrl: winner.pfpUrl || '',
+              timestamp: Date.now(),
+              type: 'winner'
+            })
+          } else {
+            // No guesses: still store result without winner
+            await updateRoundResult(roundRef.id, actualTxCount, blockHash, '0x0')
+          }
+        } catch (e) {
+          console.error('Auto-post results failed:', e)
+        } finally {
+          clearInterval(interval)
+        }
+      }
+    }
+
+    // Initial check, then poll every 30s
+    void tick()
+    const interval = setInterval(() => { void tick() }, 30000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [activeRound, client, connected, endRound])
 
   const value: GameContextType = {
