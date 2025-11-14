@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 // realtime only
 
 export function AdminPanel(): JSX.Element {
-  const { user, createRound, endRound, updateRoundResult, activeRound, rounds, getGuessesForRound, connected, client, prizeConfig } = useGame()
+  const { user, createRound, endRound, updateRoundResult, addChatMessage, activeRound, rounds, getGuessesForRound, connected, client, prizeConfig } = useGame()
   const { toast } = useToast()
   const [loading, setLoading] = useState<boolean>(false)
   const [checkingBlock, setCheckingBlock] = useState<boolean>(false)
@@ -271,11 +271,21 @@ export function AdminPanel(): JSX.Element {
 
       await updateRoundResult(closedRound.id, actualTxCount, blockHash, winner.address)
 
-      // Announcement removed
+      // Announce to Global Chat
+      await addChatMessage({
+        id: String(Date.now()),
+        roundId: 'global',
+        address: winner.address,
+        username: winner.username,
+        message: `👑 Winner: @${winner.username} — guess ${winner.guess.toLocaleString()} vs actual ${actualTxCount.toLocaleString()} tx • block #${closedRound.blockNumber}`,
+        pfpUrl: winner.pfpUrl || '',
+        timestamp: Date.now(),
+        type: 'winner'
+      })
 
       toast({
         title: '🎉 Results Posted!',
-        description: `Winner: @${winner.username} - announced on Farcaster`
+        description: `Announced in Global Chat`
       })
     } catch (error) {
       toast({
