@@ -20,15 +20,18 @@ export function CurrentRound(): JSX.Element {
         const response = await fetch('/api/mempool?action=recent-blocks')
         if (!response.ok) return
         
-        const data = await response.json()
-        if (data.timestamp) {
-          setLastBlockTime(data.timestamp * 1000) // Convert to milliseconds
-        }
-        if (data.height) {
-          setBlockNumber(data.height)
-        }
-        if (data.tx_count) {
-          setTxCount(data.tx_count)
+        const data = await response.json() as Array<{ height: number; timestamp: number; tx_count: number }>
+        const latest = Array.isArray(data) && data.length > 0 ? data[0] : null
+        if (latest) {
+          if (latest.timestamp) {
+            setLastBlockTime(latest.timestamp * 1000) // Convert to milliseconds
+          }
+          if (latest.height) {
+            setBlockNumber(latest.height)
+          }
+          if (typeof latest.tx_count === 'number') {
+            setTxCount(latest.tx_count)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch block data:', error)
