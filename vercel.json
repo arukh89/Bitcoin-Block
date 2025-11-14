@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "build": {
+    "env": {
+      "NEXT_BUILDER": "turbo"
+    }
+  }
+}
+
