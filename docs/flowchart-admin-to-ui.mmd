@@ -1,0 +1,40 @@
+flowchart TD
+%% Admin → Main Page Propagation (Focused Flow)
+
+subgraph AdminGate [Admin Preconditions]
+  A0[AdminPanel visible] --> A1{connected && isAdmin?}
+  A1 -- No --> A1x[Disable controls + show warning]
+end
+
+subgraph StartRound [Start New Round]
+  A1 -- Yes --> S0[Admin inputs: round#, block#, duration]
+  S0 --> S1{Validate inputs}
+  S1 -- Fail --> S1x[Toast error; no DB write]
+  S1 -- OK --> S2[reducers.createRound]
+end
+
+subgraph Realtime [Realtime Fan-out]
+  S2 -->|DB onInsert| R1[rounds]
+  R1 --> UI1[Current Round updates]
+  R1 --> UI2[Leaderboard (open mode)]
+  R1 --> UI3[All Predictions (empty)]
+  R1 --> UI4[GuessForm enabled]
+end
+
+subgraph CloseRound [Close & Post]
+  S2 --> P0[Poll target block (mempool.space) every 30s]
+  P0 -->|found| C0[End round (auto)]
+  C0 --> PP{round.status='closed' && block available?}
+  PP -- Yes --> RZ[Fetch hash & txids → compute actualTxCount & winner → reducers.updateRoundResult]
+  PP -- No --> PPx[Show 'block not available' + retry]
+  RZ --> UIU[UI updates via subscription]
+  RZ --> CHAT[Announce in Global Chat (type=winner)]
+end
+
+classDef ui fill:#1f2937,stroke:#94a3b8,color:#e5e7eb;
+classDef db fill:#0f766e,stroke:#2dd4bf,color:#ecfeff;
+classDef dec fill:#4b5563,stroke:#d1d5db,color:#f9fafb;
+
+class UI1,UI2,UI3,UI4,UIU,CHAT ui;
+class S2,R1,RZ db;
+class A1,S1,PP dec;

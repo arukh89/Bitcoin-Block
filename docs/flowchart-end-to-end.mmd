@@ -1,0 +1,160 @@
+flowchart TD
+%% Bitcoin Blocks — End-to-End Frontend Logic (E2E)
+
+%% Legend
+%% Rect = UI/Component, Parallelogram = Data/API, Diamond = Decision, Rounded = State/Process
+
+%% ------------------------
+%% 0) App Boot & Context
+%% ------------------------
+subgraph Boot [App Boot]
+  A[User opens app] --> L[RootLayout]
+  L --> GP[GameProvider]
+  L --> H[Home page]
+  H --> SDK[Init Farcaster SDK: sdk.actions.ready()]
+  GP --> ST[Connect SpacetimeDB]
+  ST -->|ok| SUB[Subscribe: rounds, guesses, chat, prizeConfig]
+  ST -->|fail| DISC((connected=false))
+end
+
+%% ------------------------
+%% 1) Auth & Admin Gate
+%% ------------------------
+subgraph Auth [Auth]
+  SDK --> C{context.user available?}
+  C -- Yes --> U[Create User from context\naddress=fid\nisAdmin=ADMIN_FIDS.includes(fid)]
+  C -- No --> Btn[AuthButton → sdk.context (no wallet)] --> U
+  U --> Gate[UI-only: show AdminPanel if user.isAdmin]
+end
+
+%% ------------------------
+%% 2) Page Sections
+%% ------------------------
+subgraph Sections [Main Sections]
+  H --> Header[Header: title • conn badge • AuthButton]
+  H --> Jackpot[Jackpot Hero]
+  H --> Rules[Prizes & Rules]
+  H --> CR[Current Round Card]
+  H --> Grid[Grid: GuessForm | Leaderboard | GlobalChat]
+  H --> AllPred[All Predictions]
+  H --> RB[Recent Blocks]
+  H --> Admin[(Admin Panel — conditional)]
+end
+
+%% ------------------------
+%% 3) Current Round (UI)
+%% ------------------------
+subgraph Current [Current Round]
+  SUB --> RLd[Rounds loaded]
+  RLd --> AR[activeRound = first status 'open']
+  AR --> Timer[UI countdown to target block time (1s)]
+  Timer --> S1{State}
+  S1 -- No conn --> S1a['🔌 Connecting...']
+  S1 -- No round --> S1b['⏳ Waiting for next round...']
+  S1 -- Open --> S1c[Show round info + countdown]
+end
+
+%% ------------------------
+%% 4) Guess Form
+%% ------------------------
+subgraph GF [Guess Form]
+  V[Validations]\n--> V1[Must be logged in]
+  V --> V2[Active round exists]
+  V --> V3[Round status = 'open']
+  V --> V4[One guess per user/round]
+  V --> V5[Guess int 1..20,000]
+  V --> V6[DB connected]
+  Submit[Submit] --> D{All pass?}
+  D -- No --> GE[Toast error]
+  D -- Yes --> Call[reducers.submitGuess(roundId, address=fid, username, guess, pfpUrl)]
+  Call --> Ins[(SpacetimeDB insert)]
+  Ins -. onInsert .-> GU[GameContext.guesses update]
+  GU --> UX[Show user's guess highlighted]
+end
+
+%% ------------------------
+%% 5) Leaderboard & All Predictions
+%% ------------------------
+subgraph LB [Leaderboard]
+  Mode{Round status}
+  Mode -- open --> LO[Sort by submittedAt desc]
+  Mode -- finished --> LF[Sort by |guess-actual| asc; tie=earliest]
+  Vis[Visuals] --> W1[1st: gold crown]
+  Vis --> W2[2nd: silver]
+  Vis --> W3[3rd: bronze]
+end
+
+subgraph AP [All Predictions]
+  APs[Show all guesses for active round] --> APSort[Sort by submittedAt desc]
+end
+
+%% ------------------------
+%% 6) Global Chat
+%% ------------------------
+subgraph Chat [Global Chat]
+  Types[Types: chat • system • winner]
+  Send[Send message] --> VC{non-empty ≤200}
+  VC -- ok --> Build[Build ChatMessage]
+  Build --> Red[reducers.sendChatMessage]
+  Red --> CI[(DB insert)]
+  CI -. onInsert .-> CUX[Prepend, keep last 100]
+end
+
+%% ------------------------
+%% 7) Recent Blocks
+%% ------------------------
+subgraph RBX [Recent Bitcoin Blocks]
+  Mnt[On mount] --> F1[/api/mempool?action=recent-blocks/]
+  Int[Every 60s] --> F1
+  F1 --> Load[Loading skeleton]
+  F1 --> Cards[Cards: height • tx_count • hash • size • timeAgo]
+end
+
+%% ------------------------
+%% 8) Admin Flows (Start → Auto Close → Post)
+%% ------------------------
+subgraph AdminFlow [Admin Flows]
+  Gate --> Vis[AdminPanel visible]
+
+  %% Start
+  Vis --> PreStart{connected && isAdmin?}
+  PreStart -- Yes --> Start[Start New Round]
+  PreStart -- No --> BlockStart[Disable controls + show warning]
+  Start --> Inp[Validate inputs: round#, block#, duration]
+  Inp --> CRR[reducers.createRound]
+  CRR -. subscribe .-> Current
+  CRR -. subscribe .-> LB
+  CRR -. subscribe .-> AP
+  CRR -. subscribe .-> GFEn[Enable GuessForm for players]
+
+  %% Auto-close when target block mined
+  CRR --> Poll[Poll mempool.space for target block (30s)]
+  Poll -->|found| End[Auto end round]
+  End -. subscribe .-> Current
+  End --> Race[Idempotent: manual/auto end → final state is 'closed']
+
+  %% Post Results (auto or manual)
+  End --> PrePost{round.status='closed' && block available?}
+  PrePost -- Yes --> Post[Post Results]
+  PrePost -- No --> WaitPost[Show 'block not available yet' + retry]
+  Vis --> ManualPost[Manual Post Results]
+  ManualPost --> PrePost
+  Post --> BH[/api/mempool: block-hash-by-height]
+  BH --> BT[/api/mempool: block-txids]
+  BT --> Calc[actualTxCount; pick winner (tie→earliest)]
+  Calc --> Upd[reducers.updateRoundResult]
+  Upd -. subscribe .-> LB
+  Upd -. subscribe .-> Current
+  Upd --> Ann[Announce to Global Chat (type=winner)]
+  Ann --> Chat
+end
+
+%% ------------------------
+%% 9) Schedules & Limits
+%% ------------------------
+subgraph Sched [Schedules & Limits]
+  T1[UI countdown tick] -->|1s| Current
+  T2[Target block polling] -->|30s| AdminFlow
+  T3[Recent blocks fetch] -->|60s| RBX
+  CL[Chat retention] -->|Keep last 100| Chat
+end

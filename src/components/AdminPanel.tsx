@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 // realtime only
 
 export function AdminPanel(): JSX.Element {
-  const { user, createRound, endRound, updateRoundResult, activeRound, rounds, getGuessesForRound, connected, client, prizeConfig } = useGame()
+  const { user, createRound, endRound, updateRoundResult, addChatMessage, activeRound, rounds, getGuessesForRound, connected, client, prizeConfig } = useGame()
   const { toast } = useToast()
   const [loading, setLoading] = useState<boolean>(false)
   const [checkingBlock, setCheckingBlock] = useState<boolean>(false)
@@ -271,11 +271,21 @@ export function AdminPanel(): JSX.Element {
 
       await updateRoundResult(closedRound.id, actualTxCount, blockHash, winner.address)
 
-      // Announcement removed
+      // Announce to Global Chat
+      await addChatMessage({
+        id: String(Date.now()),
+        roundId: 'global',
+        address: winner.address,
+        username: winner.username,
+        message: `👑 Winner: @${winner.username} — guess ${winner.guess.toLocaleString()} vs actual ${actualTxCount.toLocaleString()} tx • block #${closedRound.blockNumber}`,
+        pfpUrl: winner.pfpUrl || '',
+        timestamp: Date.now(),
+        type: 'winner'
+      })
 
       toast({
         title: '🎉 Results Posted!',
-        description: `Winner: @${winner.username} - announced on Farcaster`
+        description: `Announced in Global Chat`
       })
     } catch (error) {
       toast({
@@ -435,22 +445,12 @@ export function AdminPanel(): JSX.Element {
   }
 
   return (
-    <motion.div
-      initial={{ y: 30, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.9 }}
-    >
-      <Card className="glass-card-dark border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/20">
+    <div>
+      <Card className="glass-card-dark border border-yellow-500/30 shadow-sm">
         <CardHeader className="pb-3 border-b border-yellow-500/30">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <motion.span
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="text-3xl"
-              >
-                🛠️
-              </motion.span>
+              <span className="text-3xl">🛠️</span>
               <div>
                 <div className="text-xl font-black gradient-text">Admin Panel</div>
                 <div className="text-[10px] text-yellow-300 font-normal">Manage rounds & configure prizes</div>
@@ -514,7 +514,7 @@ export function AdminPanel(): JSX.Element {
               <Button
                 onClick={handleStartRound}
                 disabled={loading || !connected}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round'}
               </Button>
@@ -593,7 +593,7 @@ export function AdminPanel(): JSX.Element {
                   onClick={handleEndRound}
                   variant="destructive"
                   disabled={loading || !connected || !activeRound || activeRound.status !== 'open'}
-                  className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {loading ? '⚙️' : '🔒'}
                   <span className="ml-1 text-xs">
@@ -605,7 +605,7 @@ export function AdminPanel(): JSX.Element {
                 <Button
                   onClick={handlePostResults}
                   disabled={loading || !connected || !rounds.find(r => r.status === 'closed')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {loading ? '⚙️' : '📡'}
                   <span className="ml-1 text-xs">
@@ -688,7 +688,7 @@ export function AdminPanel(): JSX.Element {
               <Button
                 onClick={handleSavePrizeConfig}
                 disabled={loading || !connected}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold h-12"
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold h-12 shadow-sm"
               >
                 {loading ? '⚙️ Saving...' : '💾 Save Prize Configuration'}
               </Button>
@@ -705,6 +705,6 @@ export function AdminPanel(): JSX.Element {
           {/* Info note removed: Farcaster announcement no longer used */}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }

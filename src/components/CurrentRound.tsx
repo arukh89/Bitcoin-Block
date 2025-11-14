@@ -98,75 +98,47 @@ export function CurrentRound(): JSX.Element {
   // If not connected, show connecting state
   if (!connected) {
     return (
-      <motion.div
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.35 }}
-      >
-        <Card className="glass-card-dark border-orange-500/30 overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-orange-500 animate-pulse" />
+      <div>
+        <Card className="glass-card-dark border-orange-500/30 overflow-hidden shadow-sm">
           <CardContent className="py-6 px-6">
-            <motion.div
-              className="text-center py-8"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <div className="text-center py-8">
               <p className="text-gray-400 text-sm">🔌 Connecting to database...</p>
-            </motion.div>
+            </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     )
   }
 
   // If no active round OR round is closed/finished, show empty state
   if (!activeRound || activeRound.status === 'closed' || activeRound.status === 'finished') {
     return (
-      <motion.div
-        initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.35 }}
-      >
-        <Card className="glass-card-dark border-gray-500/30 overflow-hidden">
+      <div>
+        <Card className="glass-card-dark border-gray-500/30 overflow-hidden shadow-sm">
           <CardContent className="py-8 px-6">
-            <motion.div
-              className="text-center"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
+            <div className="text-center">
               <p className="text-xl text-gray-400 mb-2">⏳</p>
               <p className="text-gray-400 text-sm">Waiting for admin to start round...</p>
               <p className="text-gray-500 text-xs mt-2">
                 {!activeRound ? 'No active round yet' : 'Round closed - waiting for next round'}
               </p>
-            </motion.div>
+            </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     )
   }
 
   // Active round exists with status 'open' - display full round info from admin input
   return (
-    <motion.div
-      initial={{ y: 30, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.35 }}
-    >
-      <Card className="glass-card-dark border-orange-500/30 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-orange-500 animate-pulse" />
+    <div>
+      <Card className="glass-card-dark border-orange-500/30 overflow-hidden shadow-sm">
         
         <CardContent className="py-6 px-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             {/* Left: Round Info - Direct from Admin Panel */}
             <div className="flex items-center gap-3">
-              <motion.span
-                animate={{ rotate: activeRound.status === 'open' ? 360 : 0 }}
-                transition={{ duration: 3, repeat: activeRound.status === 'open' ? Infinity : 0, ease: "linear" }}
-                className="text-2xl"
-              >
-                🎮
-              </motion.span>
+              <span className="text-2xl">🎮</span>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg lg:text-xl font-black text-white">
@@ -200,19 +172,9 @@ export function CurrentRound(): JSX.Element {
               <div className="glass-card p-3 lg:p-4 rounded-xl flex-1">
                 <div className="text-center">
                   <p className="text-[10px] lg:text-xs text-orange-300 font-semibold mb-1">⏱ Time Left</p>
-                  <motion.p
-                    className="text-xl lg:text-2xl font-black text-white font-mono"
-                    animate={{
-                      textShadow: activeRound.status === 'open' ? [
-                        "0 0 10px rgba(251,146,60,0.5)",
-                        "0 0 20px rgba(251,146,60,0.8)",
-                        "0 0 10px rgba(251,146,60,0.5)"
-                      ] : []
-                    }}
-                    transition={{ duration: 2, repeat: activeRound.status === 'open' ? Infinity : 0 }}
-                  >
+                  <p className="text-xl lg:text-2xl font-black text-white font-mono">
                     {countdown}
-                  </motion.p>
+                  </p>
                   <p className="text-[9px] lg:text-[10px] text-gray-400 mt-1">
                     {activeRound.duration ? `${activeRound.duration}m` : 'N/A'}
                   </p>
@@ -222,6 +184,6 @@ export function CurrentRound(): JSX.Element {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }

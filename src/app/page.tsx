@@ -9,7 +9,6 @@ import { GuessForm } from '@/components/GuessForm'
 import { Leaderboard } from '@/components/Leaderboard'
 import { AllPredictions } from '@/components/AllPredictions'
 import { LoadingScreen } from '@/components/LoadingScreen'
-import { AnimatedBackground } from '@/components/AnimatedBackground'
 import { RecentBlocks } from '@/components/RecentBlocks'
 import { CurrentRound } from '@/components/CurrentRound'
 import PrizesAndRulesSection from '@/components/PrizesAndRulesSection'
@@ -83,12 +82,12 @@ export default function Home(): JSX.Element {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="min-h-screen relative overflow-hidden"
+          className="min-h-screen relative overflow-x-hidden"
           style={{
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #e94560 100%)'
           }}
         >
-          <AnimatedBackground />
+          {/* Animated background removed to match reference (static gradient only) */}
           
           {/* Database Status Banner - Removed to hide mode indicator */}
           
@@ -104,7 +103,7 @@ export default function Home(): JSX.Element {
               className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
             >
               <div className="space-y-2">
-                <motion.h1
+                <h1
                   className="text-3xl lg:text-4xl font-black gradient-text flex items-center gap-3 relative z-50"
                   style={{
                     filter: 'none',
@@ -127,7 +126,7 @@ export default function Home(): JSX.Element {
                     🛠️
                   </span>
                   Bitcoin Blocks
-                </motion.h1>
+                </h1>
                 <p className="text-orange-300 text-sm font-medium flex items-center gap-2">
                   <span className="inline-block w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
                   Predicting Bitcoin's Next Block
@@ -135,12 +134,7 @@ export default function Home(): JSX.Element {
               </div>
               
               <div className="flex items-center gap-3">
-                <motion.div
-                  animate={{
-                    scale: connected ? [1, 1.05, 1] : 1,
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
+                <div>
                   <Badge 
                     variant="outline" 
                     className={`${
@@ -149,10 +143,10 @@ export default function Home(): JSX.Element {
                         : 'glass-card-dark text-red-300 border-red-400/50'
                     } px-3 py-1.5 text-xs font-semibold`}
                   >
-                    <span className={`inline-block w-2 h-2 rounded-full mr-2 ${connected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+                    <span className={`inline-block w-2 h-2 rounded-full mr-2 ${connected ? 'bg-green-400' : 'bg-red-400'}`} />
                     {connected ? 'Connected' : 'Disconnected'}
                   </Badge>
-                </motion.div>
+                </div>
                 <AuthButton />
               </div>
             </motion.div>
@@ -163,27 +157,12 @@ export default function Home(): JSX.Element {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="glass-card border-2 border-yellow-500/50 overflow-hidden relative shadow-3d">
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-yellow-500/0 via-yellow-500/20 to-yellow-500/0"
-                  animate={{ x: ['-100%', '100%'] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                />
+              <Card className="glass-card border border-yellow-500/30 overflow-hidden relative shadow-sm">
                 <CardContent className="py-4 sm:py-6 text-center relative z-10">
                   <p className="text-yellow-300 text-xs sm:text-sm font-bold uppercase tracking-wider mb-1">💰 Jackpot</p>
-                  <motion.p
-                    className="text-3xl sm:text-5xl font-black gradient-text"
-                    animate={{
-                      textShadow: [
-                        "0 0 20px rgba(234,179,8,0.5)",
-                        "0 0 40px rgba(234,179,8,0.8)",
-                        "0 0 20px rgba(234,179,8,0.5)"
-                      ]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
+                  <p className="text-3xl sm:text-5xl font-black gradient-text">
                     {prizeConfig ? `${Number(prizeConfig.jackpotAmount).toLocaleString()} ${prizeConfig.currencyType}` : '5,000 $SECOND'}
-                  </motion.p>
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -253,7 +232,7 @@ export default function Home(): JSX.Element {
               >
                 <Button
                   onClick={() => setShowAdminPanel(!showAdminPanel)}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold px-6 py-3 shadow-2xl shadow-yellow-500/30"
+                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold px-6 py-3 shadow-sm"
                 >
                   {showAdminPanel ? '🔼 Hide Admin Panel' : '🛠️ Show Admin Panel'}
                 </Button>

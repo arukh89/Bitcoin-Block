@@ -115,15 +115,10 @@ export function GuessForm(): JSX.Element {
   }
 
   return (
-    <Card className="glass-card-dark border-orange-500/30 h-full shadow-3d">
+    <Card className="glass-card-dark border-orange-500/30 h-full shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-white text-lg">
-          <motion.span
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            🔢
-          </motion.span>
+          <span>🔢</span>
           Submit Your Guess
         </CardTitle>
       </CardHeader>
@@ -146,48 +141,31 @@ export function GuessForm(): JSX.Element {
 
           {/* Status Messages */}
           {!connected ? (
-            <motion.div
-              className="glass-card p-4 rounded-xl text-center border border-yellow-500/30"
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <div className="glass-card p-4 rounded-xl text-center border border-yellow-500/30">
               <p className="text-2xl mb-2">🔌</p>
               <p className="text-yellow-300 text-sm font-medium">Connecting to database...</p>
-            </motion.div>
+            </div>
           ) : !user ? (
-            <motion.div
-              className="glass-card p-4 rounded-xl text-center border border-gray-500/30"
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <div className="glass-card p-4 rounded-xl text-center border border-gray-500/30">
               <p className="text-2xl mb-2">🔒</p>
               <p className="text-gray-300 text-sm font-medium">Sign in with Farcaster to participate</p>
-            </motion.div>
+            </div>
           ) : !activeRound ? (
-            <motion.div
-              className="glass-card p-4 rounded-xl text-center border border-yellow-500/30"
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <div className="glass-card p-4 rounded-xl text-center border border-yellow-500/30">
               <p className="text-2xl mb-2">⏳</p>
               <p className="text-yellow-300 text-sm font-medium">Waiting for next round to start...</p>
               <p className="text-yellow-400 text-xs mt-2">💡 Admin: Create a round in the Admin Panel below</p>
-            </motion.div>
+            </div>
           ) : (
             <>
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 text-base font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || isRoundLocked || !connected || alreadyGuessed}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <motion.span
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    >
-                      ⚙️
-                    </motion.span>
+                    <span>⚙️</span>
                     Submitting...
                   </span>
                 ) : alreadyGuessed ? (
@@ -202,15 +180,11 @@ export function GuessForm(): JSX.Element {
               </Button>
 
               {isRoundLocked && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="glass-card p-3 rounded-lg border border-red-500/30 bg-red-500/10"
-                >
+                <div className="glass-card p-3 rounded-lg border border-red-500/30 bg-red-500/10">
                   <p className="text-sm text-red-300 text-center font-semibold">
                     ❌ Round Locked - Submissions Closed
                   </p>
-                </motion.div>
+                </div>
               )}
 
               <div className="glass-card p-3 rounded-lg border border-blue-500/30 bg-blue-500/5">
@@ -224,20 +198,11 @@ export function GuessForm(): JSX.Element {
 
         {/* User's Own Guess - Highlighted */}
         {user && activeRound && userGuesses.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-2 pt-4 border-t border-gray-700/50"
-          >
+          <div className="space-y-2 pt-4 border-t border-gray-700/50">
             <Label className="text-gray-400 text-xs font-semibold uppercase tracking-wide">✨ Your Prediction</Label>
             <div className="space-y-2">
               {userGuesses.map((g) => (
-                <motion.div
-                  key={g.id}
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="glass-card p-3 rounded-lg border-2 border-orange-500/40 bg-gradient-to-r from-orange-500/10 to-purple-500/10"
-                >
+                <div key={g.id} className="glass-card p-3 rounded-lg border border-orange-500/30 bg-gradient-to-r from-orange-500/10 to-purple-500/10">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl">🎯</span>
@@ -254,23 +219,19 @@ export function GuessForm(): JSX.Element {
                       YOU
                     </span>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Already guessed message - shown when user has submitted */}
         {alreadyGuessed && userGuesses.length === 0 && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="glass-card p-4 rounded-xl text-center border-2 border-green-500/50 bg-green-500/10"
-          >
+          <div className="glass-card p-4 rounded-xl text-center border border-green-500/40 bg-green-500/10">
             <p className="text-3xl mb-2">✅</p>
             <p className="text-green-300 text-sm font-bold">Guess Submitted!</p>
             <p className="text-green-400 text-xs mt-1">One prediction per round</p>
-          </motion.div>
+          </div>
         )}
       </CardContent>
     </Card>
