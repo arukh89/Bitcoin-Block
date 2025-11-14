@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useGame } from '@/context/GameContext'
 import { motion } from 'framer-motion'
 import type { User } from '@/types/game'
-import { sdk } from '@farcaster/miniapp-sdk'
+import sdk from '@farcaster/miniapp-sdk'
 
 export function AuthButton(): JSX.Element {
   const { user, setUser } = useGame()
@@ -17,25 +17,7 @@ export function AuthButton(): JSX.Element {
     try {
       setLoading(true)
       
-      // Check if in mock mode (development/testing)
-      const isMockMode = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost'
-      
-      if (isMockMode) {
-        // Auto-login as admin in mock mode
-        console.log('🎯 [MOCK MODE] Auto-connecting as admin...')
-        const adminAddress = '0x09D02D25D0D082f7F2E04b4838cEfe271b2daB09'
-        const userData: User = {
-          address: adminAddress,
-          username: 'admin',
-          displayName: 'Admin User',
-          pfpUrl: 'https://i.imgur.com/placeholder-admin.jpg'
-        }
-        setUser(userData)
-        console.log('✅ [MOCK MODE] Connected as admin:', adminAddress)
-        return
-      }
-      
-      // Production mode: Request wallet connection using Farcaster miniapp SDK
+      // Request wallet connection using Farcaster miniapp SDK
       const wallet = await sdk.wallet.ethProvider.request({
         method: 'eth_requestAccounts'
       }) as string[]

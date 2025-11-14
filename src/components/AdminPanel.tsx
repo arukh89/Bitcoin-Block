@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { useGame, isDevAddress } from '@/context/GameContext'
+import { useGame } from '@/context/GameContext'
 import { useToast } from '@/hooks/use-toast'
-import { APP_CONFIG } from '@/config/app-config'
+// realtime only
 
 export function AdminPanel(): JSX.Element {
   const { user, createRound, endRound, updateRoundResult, activeRound, rounds, getGuessesForRound, connected, client, prizeConfig } = useGame()
@@ -132,10 +132,7 @@ export function AdminPanel(): JSX.Element {
       setLoading(true)
       await createRound(roundNum, now, endTime, prize, blockNum, durationMin)
       
-      // Auto-post to Farcaster
-      const farcasterPrize = `${jackpotAmount} ${prizeCurrency}`
-      const message = `🔔 Round #${roundNum} Started!\n\nGuess how many transactions will be in the next Bitcoin block ⛏️\n\n💰 Jackpot: ${farcasterPrize}\n🎯 Target Block: #${blockNum}\n⏱ Duration: ${durationMin} minutes\n\n#BitcoinBlocks`
-      await handleAnnounce(message)
+      // Announcement removed
       
       toast({
         title: '✅ Round Started',
@@ -146,8 +143,8 @@ export function AdminPanel(): JSX.Element {
       setBlockNumber('')
       setDuration('10')
       
-      // Start polling mempool.space for target block
-      if (APP_CONFIG.mode !== 'mock' && blockNum) {
+      // Start polling mempool.space for target block (realtime)
+      if (blockNum) {
         pollForTargetBlock(blockNum)
       }
     } catch (error) {
@@ -233,47 +230,11 @@ export function AdminPanel(): JSX.Element {
     try {
       setLoading(true)
       
-      // In mock mode, simulate block data
-      if (APP_CONFIG.mode === 'mock') {
-        const simulatedTxCount = Math.floor(Math.random() * 1000) + 2500
-        const simulatedHash = `0000000000000000000${Math.random().toString(36).substring(2, 15)}`
-
-        const sorted = [...guesses].sort((a, b) => {
-          const diffA = Math.abs(a.guess - simulatedTxCount)
-          const diffB = Math.abs(b.guess - simulatedTxCount)
-          if (diffA !== diffB) return diffA - diffB
-          return a.submittedAt - b.submittedAt
-        })
-
-        const winner = sorted[0]
-        const runnerUp = sorted[1]
-
-        await updateRoundResult(closedRound.id, simulatedTxCount, simulatedHash, winner.address)
-
-        const newJackpot = `${jackpotAmount} ${prizeCurrency}`
-        const message = `📊 Block #${closedRound.blockNumber} had ${simulatedTxCount.toLocaleString()} transactions.\n\n🥇 Winner: @${winner.username}\n🥈 Runner-Up: ${runnerUp ? `@${runnerUp.username}` : 'N/A'}\n\n💰 Jackpot is now: ${newJackpot}\n\n#BitcoinBlocks`
-        
-        console.log('[MOCK MODE] Farcaster announcement:', message)
-        await handleAnnounce(message)
-
-        toast({
-          title: '🎉 Results Posted! (Mock)',
-          description: `Winner: @${winner.username} - ${simulatedTxCount} tx simulated`
-        })
-        return
-      }
+      // Realtime only
       
-      // Real-time mode: Fetch from mempool.space
-      const blockRes = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          protocol: 'https',
-          origin: 'mempool.space',
-          path: `/api/block-height/${closedRound.blockNumber}`,
-          method: 'GET',
-          headers: {}
-        })
+      // Real-time mode: Fetch from mempool.space via our proxy
+      const blockRes = await fetch(`/api/mempool?action=block-hash-by-height&height=${closedRound.blockNumber}`, {
+        method: 'GET'
       })
 
       if (!blockRes.ok) {
@@ -282,16 +243,8 @@ export function AdminPanel(): JSX.Element {
 
       const blockHash = await blockRes.text() as string
 
-      const txRes = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          protocol: 'https',
-          origin: 'mempool.space',
-          path: `/api/block/${blockHash}/txids`,
-          method: 'GET',
-          headers: {}
-        })
+      const txRes = await fetch(`/api/mempool?action=block-txids&blockHash=${blockHash}`, {
+        method: 'GET'
       })
 
       if (!txRes.ok) {
@@ -301,8 +254,7 @@ export function AdminPanel(): JSX.Element {
       const txids = await txRes.json() as string[]
       const actualTxCount = txids.length
 
-      // Find winners
-      const guesses = getGuessesForRound(closedRound.id)
+      // Find winners using existing guesses
       if (guesses.length === 0) {
         throw new Error('No predictions in this round')
       }
@@ -319,11 +271,7 @@ export function AdminPanel(): JSX.Element {
 
       await updateRoundResult(closedRound.id, actualTxCount, blockHash, winner.address)
 
-      // Auto-post results to Farcaster
-      const newJackpot = `${jackpotAmount} ${prizeCurrency}`
-      const message = `📊 Block #${closedRound.blockNumber} had ${actualTxCount.toLocaleString()} transactions.\n\n🥇 Winner: @${winner.username}\n🥈 Runner-Up: ${runnerUp ? `@${runnerUp.username}` : 'N/A'}\n\n💰 Jackpot is now: ${newJackpot}\n\n#BitcoinBlocks`
-      
-      await handleAnnounce(message)
+      // Announcement removed
 
       toast({
         title: '🎉 Results Posted!',
@@ -340,31 +288,7 @@ export function AdminPanel(): JSX.Element {
     }
   }
 
-  const handleAnnounce = async (message: string): Promise<void> => {
-    if (!user?.isAdmin) {
-      console.warn('⚠️ Non-admin tried to announce')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/farcaster-announce', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          address: user.address
-        })
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to announce')
-      }
-    } catch (error) {
-      console.error('Announcement error:', error)
-    }
-  }
+  // Farcaster announce feature removed
 
   const handleSavePrizeConfig = async (): Promise<void> => {
     if (!client || !connected) {
@@ -446,24 +370,13 @@ export function AdminPanel(): JSX.Element {
 
   // Poll mempool.space to check if target block is available
   const pollForTargetBlock = async (targetBlock: number): Promise<void> => {
-    if (APP_CONFIG.mode === 'mock') return
     
     setCheckingBlock(true)
     setBlockAvailable(false)
     
     const checkBlock = async (): Promise<boolean> => {
       try {
-        const response = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            protocol: 'https',
-            origin: 'mempool.space',
-            path: `/api/block-height/${targetBlock}`,
-            method: 'GET',
-            headers: {}
-          })
-        })
+        const response = await fetch(`/api/mempool?action=block-hash-by-height&height=${targetBlock}`)
         
         if (response.ok) {
           console.log(`✅ Block #${targetBlock} is now available on mempool.space!`)
@@ -557,7 +470,7 @@ export function AdminPanel(): JSX.Element {
                 <span className="text-xl">🚀</span>
                 <h3 className="text-base font-bold text-white">Start New Round</h3>
               </div>
-              <p className="text-xs text-gray-400">Opens new round for guesses & auto-posts to Farcaster</p>
+              <p className="text-xs text-gray-400">Opens new round for guesses</p>
 
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -603,7 +516,7 @@ export function AdminPanel(): JSX.Element {
                 disabled={loading || !connected}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round & Announce'}
+                {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round'}
               </Button>
               {!connected && (
                 <p className="text-xs text-red-400 mt-2 text-center">
@@ -618,12 +531,7 @@ export function AdminPanel(): JSX.Element {
                 <span className="text-xl">🎮</span>
                 <h3 className="text-base font-bold text-white">Manage Round</h3>
               </div>
-              <p className="text-xs text-gray-400">
-                {APP_CONFIG.mode === 'mock' 
-                  ? 'End round, simulate & post results'
-                  : 'End round or fetch results from mempool.space (auto-closes when target block available)'
-                }
-              </p>
+              <p className="text-xs text-gray-400">End round or fetch results from mempool.space (auto-closes when target block available)</p>
 
               {/* Round Status Info */}
               {activeRound ? (
@@ -654,7 +562,7 @@ export function AdminPanel(): JSX.Element {
                   </div>
                   
                   {/* Block Check Status */}
-                  {checkingBlock && APP_CONFIG.mode !== 'mock' && (
+                  {checkingBlock && (
                     <div className="glass-card-dark p-3 rounded-lg border border-blue-500/30">
                       <p className="text-xs text-blue-300 text-center">
                         🔍 Checking mempool.space for Block #{activeRound.blockNumber}...
@@ -662,7 +570,7 @@ export function AdminPanel(): JSX.Element {
                     </div>
                   )}
                   
-                  {blockAvailable && APP_CONFIG.mode !== 'mock' && (
+                  {blockAvailable && (
                     <div className="glass-card-dark p-3 rounded-lg border border-green-500/30">
                       <p className="text-xs text-green-300 text-center">
                         ✅ Block #{activeRound.blockNumber} found on mempool.space!
@@ -701,10 +609,7 @@ export function AdminPanel(): JSX.Element {
                 >
                   {loading ? '⚙️' : '📡'}
                   <span className="ml-1 text-xs">
-                    {loading 
-                      ? (APP_CONFIG.mode === 'mock' ? 'Simulating...' : 'Fetching...') 
-                      : 'Post Results'
-                    }
+                {loading ? 'Fetching...' : 'Post Results'}
                   </span>
                 </Button>
               </div>
@@ -797,12 +702,7 @@ export function AdminPanel(): JSX.Element {
           </div>
 
           {/* Info Note */}
-          <div className="glass-card-dark p-4 rounded-xl border border-cyan-500/30">
-            <p className="text-sm text-cyan-300">
-              <span className="font-bold">ℹ️ Auto-Announcement:</span> Starting rounds and posting results will automatically announce on Farcaster with formatted messages.
-              {APP_CONFIG.mode === 'mock' && <span className="text-purple-300 ml-2">(Mock mode: announcements logged to console)</span>}
-            </p>
-          </div>
+          {/* Info note removed: Farcaster announcement no longer used */}
         </CardContent>
       </Card>
     </motion.div>

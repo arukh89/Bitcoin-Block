@@ -45,7 +45,6 @@ spacetime-server/logs/
 dist/
 build/
 
-# Package manager locks (optional)
-pnpm-lock.yaml
-yarn.lock
-package-lock.json
+# Package manager locks (commit lockfiles for reproducible builds)
+# yarn.lock
+# package-lock.json

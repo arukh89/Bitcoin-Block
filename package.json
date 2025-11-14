@@ -7,9 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "provision:spacetime": "where spacetime >NUL 2>NUL || powershell -NoProfile -ExecutionPolicy Bypass -Command \"iwr https://windows.spacetimedb.com -useb | iex\" && powershell -NoProfile -ExecutionPolicy Bypass -Command \"$ErrorActionPreference='Stop'; $base='https://testnet.spacetimedb.com'; $res=Invoke-RestMethod -Method Post -Uri ($base+'/v1/identity'); $id=$res.identity; $tok=$res.token; Write-Host ('IDENTITY='+$id); Write-Host ('TOKEN='+$tok); Invoke-RestMethod -Method Post -Uri ($base+'/v1/identity/'+$id+'/set-email?email=the89shadow@gmail.com') -Headers @{ Authorization=('Bearer '+$tok) }; Write-Host 'EMAIL_BOUND=OK';\" && spacetime login && cd spacetime-server && spacetime publish bitcoin-blocks --clear-database",
-    "verify-turbo": "node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const nextVer=pkg.dependencies.next;console.log('✅ Next.js version:', nextVer);console.log('✅ Turbopack is automatically enabled in Next.js 16+ with Node.js 20+');process.exit(0);\""
+    "lint": "eslint ."
   },
   "engines": {
     "node": "20.x",

@@ -9,11 +9,11 @@ This application uses **SpacetimeDB** for real-time multiplayer functionality. T
 ## ⚠️ IMPORTANT: Current Status
 
 **Database Status**: ❌ **OFFLINE**  
-**Reason**: SpacetimeDB module not published to testnet
+**Reason**: SpacetimeDB module not published
 
 The application is trying to connect to:
-- **Host**: `wss://testnet.spacetimedb.com`
-- **Module Name**: `bitcoin-blocks`
+- **Host**: `wss://<your-mainnet-host>`
+- **Module Name**: `bitcoin-block`
 
 But this module **does not exist yet** on the testnet!
 
@@ -21,7 +21,7 @@ But this module **does not exist yet** on the testnet!
 
 ## 📋 Quick Fix: Publish SpacetimeDB Module
 
-### Option 1: Publish to SpacetimeDB Testnet (Recommended)
+### Option 1: Publish to SpacetimeDB (Mainnet)
 
 #### Step 1: Install SpacetimeDB CLI
 
@@ -46,9 +46,9 @@ spacetime login
 # Navigate to project root
 cd /path/to/your/project
 
-# Publish to testnet
+# Publish to mainnet
 cd spacetime-server
-spacetime publish bitcoin-blocks --clear-database
+spacetime publish bitcoin-block --clear-database
 
 # Note the module identity returned (hex format like: 0x123abc...)
 ```
@@ -59,8 +59,8 @@ If you want to use a custom module name or hosted instance:
 
 Create `.env.local` in project root:
 ```env
-NEXT_PUBLIC_SPACETIME_HOST=wss://testnet.spacetimedb.com
-NEXT_PUBLIC_SPACETIME_DB_NAME=bitcoin-blocks
+NEXT_PUBLIC_SPACETIME_HOST=wss://<your-mainnet-host>
+NEXT_PUBLIC_SPACETIME_DB_NAME=bitcoin-block
 ```
 
 #### Step 5: Verify Connection
@@ -87,7 +87,7 @@ spacetime start
 
 ```bash
 cd spacetime-server
-spacetime publish bitcoin-blocks --clear-database
+spacetime publish bitcoin-block --clear-database
 ```
 
 #### Step 3: Update Environment Variables
@@ -95,7 +95,7 @@ spacetime publish bitcoin-blocks --clear-database
 Create `.env.local`:
 ```env
 NEXT_PUBLIC_SPACETIME_HOST=ws://localhost:3000
-NEXT_PUBLIC_SPACETIME_DB_NAME=bitcoin-blocks
+NEXT_PUBLIC_SPACETIME_DB_NAME=bitcoin-block
 ```
 
 #### Step 4: Run Your App
@@ -117,7 +117,7 @@ pnpm dev
 
 **Solution:**
 1. Verify module is published: `spacetime list`
-2. Check module name matches: `bitcoin-blocks`
+2. Check module name matches: `bitcoin-block`
 3. Ensure testnet is accessible from your network
 4. Check browser console for detailed error messages
 

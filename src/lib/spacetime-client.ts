@@ -1,11 +1,10 @@
-// Real SpacetimeDB client connection using official SDK
 import { DbConnection, type RemoteTables, type RemoteReducers } from '@/spacetime_module_bindings'
 
 // SpacetimeDB connection settings
 // IMPORTANT: Module must be published to testnet first using SpacetimeDB CLI
 // Instructions: See DEPLOYMENT_GUIDE.md
-const SPACETIME_HOST = process.env.NEXT_PUBLIC_SPACETIME_HOST || 'wss://testnet.spacetimedb.com'
-const SPACETIME_DB_NAME = process.env.NEXT_PUBLIC_SPACETIME_DB_NAME || 'bitcoin-blocks'
+const SPACETIME_HOST = process.env.NEXT_PUBLIC_SPACETIME_HOST || ''
+const SPACETIME_DB_NAME = process.env.NEXT_PUBLIC_SPACETIME_DB_NAME || ''
 
 let dbConnection: DbConnection | null = null
 let isConnecting = false
@@ -38,52 +37,37 @@ export async function connectToSpacetime(): Promise<DbConnection> {
     console.log('Host:', SPACETIME_HOST)
     console.log('Database:', SPACETIME_DB_NAME)
     console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES + 1}`)
-    
-    // Set timeout for connection
-    const connectionTimeout = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Connection timeout after 10 seconds')), 10000)
-    })
-
-    const connectionPromise = DbConnection.builder()
+    const conn = DbConnection.builder()
       .withUri(SPACETIME_HOST)
       .withModuleName(SPACETIME_DB_NAME)
-      .onConnect((token, identity, address) => {
+      .onConnect((connection, identity, token) => {
         console.log('✅ Connected to SpacetimeDB')
         console.log('Identity:', identity)
-        console.log('Address:', address)
-        retryCount = 0 // Reset retry count on successful connection
+        retryCount = 0
         connectionError = null
       })
-      .onDisconnect((closeCode, closeReason) => {
+      .onDisconnect((ctx, error) => {
         console.log('❌ Disconnected from SpacetimeDB')
-        console.log('Code:', closeCode, 'Reason:', closeReason)
         dbConnection = null
-        
-        // Attempt to reconnect if not a clean disconnect
-        if (closeCode !== 1000 && retryCount < MAX_RETRIES) {
+        if (error && retryCount < MAX_RETRIES) {
           console.log('🔄 Attempting to reconnect...')
           setTimeout(() => {
             retryCount++
             connectToSpacetime().catch(err => {
               console.error('Reconnection failed:', err)
             })
-          }, 2000 * (retryCount + 1)) // Exponential backoff
+          }, 2000 * (retryCount + 1))
         }
       })
-      .onError((error) => {
-        console.error('⚠️ SpacetimeDB Error:', error)
+      .onConnectError((ctx, error) => {
+        console.error('⚠️ SpacetimeDB Connect Error:', error)
         connectionError = error instanceof Error ? error.message : 'Unknown error'
       })
       .build()
-    
-    const conn = await Promise.race([connectionPromise, connectionTimeout])
-    
+
     dbConnection = conn
     console.log('🎉 SpacetimeDB connection established!')
-    console.log('📊 Module info:', {
-      host: SPACETIME_HOST,
-      database: SPACETIME_DB_NAME
-    })
+    console.log('📊 Module info:', { host: SPACETIME_HOST, database: SPACETIME_DB_NAME })
     return conn
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'

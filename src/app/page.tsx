@@ -1,29 +1,25 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRouter } from 'next/navigation'
 
 import { AuthButton } from '@/components/AuthButton'
 import { GlobalChat } from '@/components/GlobalChat'
 import { AdminPanel } from '@/components/AdminPanel'
-import { Countdown } from '@/components/Countdown'
 import { GuessForm } from '@/components/GuessForm'
 import { Leaderboard } from '@/components/Leaderboard'
 import { AllPredictions } from '@/components/AllPredictions'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { AnimatedBackground } from '@/components/AnimatedBackground'
 import { RecentBlocks } from '@/components/RecentBlocks'
-import { DatabaseStatusBanner } from '@/components/DatabaseStatusBanner'
 import { CurrentRound } from '@/components/CurrentRound'
 import PrizesAndRulesSection from '@/components/PrizesAndRulesSection'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useGame } from '@/context/GameContext'
-import { sdk } from "@farcaster/miniapp-sdk"
+import sdk from "@farcaster/miniapp-sdk"
 
 export default function Home(): JSX.Element {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false)
   const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false)

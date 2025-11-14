@@ -6,8 +6,9 @@ export function AnimatedBackground(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvasEl = canvasRef.current
+    if (!canvasEl) return
+    const canvas = canvasEl as HTMLCanvasElement
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
@@ -113,7 +114,7 @@ export function AnimatedBackground(): JSX.Element {
 
     // Animation loop
     function animate(): void {
-      if (!ctx || !canvas) return
+      if (!ctx) return
       
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 

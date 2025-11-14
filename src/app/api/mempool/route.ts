@@ -204,6 +204,103 @@ export async function GET(request: Request): Promise<Response> {
       )
     }
 
+    if (action === 'block-hash-by-height') {
+      const height = searchParams.get('height')
+      if (!height) {
+        return NextResponse.json(
+          { error: 'Missing height parameter' },
+          { status: 400 }
+        )
+      }
+
+      let attempts = 0
+      const maxAttempts = 3
+      let lastError: Error | null = null
+
+      while (attempts < maxAttempts) {
+        try {
+          // mempool.space returns the block hash as plain text
+          const response = await fetch(
+            `https://mempool.space/api/block-height/${height}`,
+            {
+              method: 'GET',
+              headers: { 'Accept': 'text/plain' },
+              signal: AbortSignal.timeout(10000)
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`mempool.space API returned ${response.status}`)
+          }
+
+          const hash = await response.text()
+          return new Response(hash, { status: 200, headers: { 'Content-Type': 'text/plain' } })
+        } catch (error) {
+          lastError = error as Error
+          attempts++
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts))
+          }
+        }
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch block hash after multiple attempts',
+          details: lastError?.message || 'Unknown error'
+        },
+        { status: 503 }
+      )
+    }
+
+    if (action === 'block-txids') {
+      const blockHash = searchParams.get('blockHash')
+      if (!blockHash) {
+        return NextResponse.json(
+          { error: 'Missing blockHash parameter' },
+          { status: 400 }
+        )
+      }
+
+      let attempts = 0
+      const maxAttempts = 3
+      let lastError: Error | null = null
+
+      while (attempts < maxAttempts) {
+        try {
+          const response = await fetch(
+            `https://mempool.space/api/block/${blockHash}/txids`,
+            {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+              signal: AbortSignal.timeout(10000)
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`mempool.space API returned ${response.status}`)
+          }
+
+          const txids = await response.json() as string[]
+          return NextResponse.json(txids)
+        } catch (error) {
+          lastError = error as Error
+          attempts++
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts))
+          }
+        }
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch block txids after multiple attempts',
+          details: lastError?.message || 'Unknown error'
+        },
+        { status: 503 }
+      )
+    }
+
     if (action === 'recent-txs') {
       // Fetch recent mempool transactions
       let attempts = 0

@@ -2,14 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import type { Round, Guess, Log, User, ChatMessage, PrizeConfiguration } from '@/types/game'
-import { APP_CONFIG, isMockMode, isRealtimeMode } from '@/config/app-config'
+// Realtime-only mode
 import sdk from '@farcaster/miniapp-sdk'
 
 // Real-time client import
 import { connectToSpacetime, type DbConnection } from '@/lib/spacetime-client'
 
-// Mock client import (for fallback)
-import { connectToMockSpacetime, type MockDbConnection } from '@/lib/mock-spacetime-client'
+// Mock mode removed
 
 import type { 
   Round as STDBRound, 
@@ -36,8 +35,7 @@ interface GameContextType {
   hasUserGuessed: (roundId: string, address: string) => boolean
   addChatMessage: (message: ChatMessage) => void
   connected: boolean
-  mode: 'mock' | 'realtime'
-  client: MockDbConnection | DbConnection | null
+  client: DbConnection | null
   userFid: number | null
 }
 
@@ -138,11 +136,11 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   const [logs, setLogs] = useState<Log[]>([])
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [prizeConfig, setPrizeConfig] = useState<PrizeConfiguration | null>(null)
-  const [client, setClient] = useState<MockDbConnection | DbConnection | null>(null)
+  const [client, setClient] = useState<DbConnection | null>(null)
   const [connected, setConnected] = useState<boolean>(false)
   const [farcasterContext, setFarcasterContext] = useState<any>(null)
 
-  const mode = APP_CONFIG.mode
+  const modeLabel = 'REALTIME'
   const activeRound = rounds.find(r => r.status === 'open') || null
 
   // ===========================================
@@ -201,28 +199,20 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
 
     const initConnection = async (): Promise<void> => {
       try {
-        console.log(`🟢 Initializing ${mode.toUpperCase()} mode...`)
+        console.log('🟢 Initializing REALTIME mode...')
         setConnected(false)
         
-        let conn: MockDbConnection | DbConnection
-        
-        if (isRealtimeMode()) {
-          console.log('🔌 Connecting to real SpacetimeDB...')
-          conn = await connectToSpacetime()
-        } else {
-          console.log('🧪 Connecting to mock SpacetimeDB...')
-          conn = await connectToMockSpacetime()
-        }
+        const conn: DbConnection = await connectToSpacetime()
         
         if (mounted) {
           setClient(conn)
-          console.log(`✅ ${mode.toUpperCase()} Client connected`)
+          console.log('✅ REALTIME Client connected')
           setConnected(true)
-          console.log(`✅ ${mode.toUpperCase()} Connection established!`)
+          console.log('✅ REALTIME Connection established!')
           console.log('🟢 Database connection ready for admin operations')
         }
       } catch (error) {
-        console.error(`❌ ${mode.toUpperCase()} Failed to connect:`, error)
+        console.error('❌ REALTIME Failed to connect:', error)
         setConnected(false)
       }
     }
@@ -232,7 +222,7 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
     return () => {
       mounted = false
     }
-  }, [mode])
+  }, [])
 
   // ===========================================
   // Subscribe to rounds table
@@ -240,34 +230,34 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   useEffect(() => {
     if (!client) return
 
-    console.log(`📊 [${mode.toUpperCase()}] Subscribing to rounds table...`)
+    console.log(`📊 [${modeLabel}] Subscribing to rounds table...`)
 
-    const unsubscribe = client.db.rounds.onInsert((ctx, row) => {
+    const unsubscribe: (() => void) | undefined = client.db.rounds.onInsert((ctx, row) => {
       const converted = convertRound(row)
-      console.log(`➕ [${mode.toUpperCase()}] New round inserted:`, converted)
+      console.log(`➕ [${modeLabel}] New round inserted:`, converted)
       setRounds(prev => {
         const exists = prev.find(r => r.id === converted.id)
         if (exists) return prev
         return [...prev, converted]
       })
-    })
+    }) as unknown as () => void
 
-    const unsubscribeUpdate = client.db.rounds.onUpdate((ctx, oldRow, newRow) => {
+    const unsubscribeUpdate: (() => void) | undefined = client.db.rounds.onUpdate((ctx, oldRow, newRow) => {
       const converted = convertRound(newRow)
-      console.log(`🔄 [${mode.toUpperCase()}] Round updated:`, converted)
+      console.log(`🔄 [${modeLabel}] Round updated:`, converted)
       setRounds(prev => prev.map(r => r.id === converted.id ? converted : r))
-    })
+    }) as unknown as () => void
 
     // Load initial data
     const initialRounds = Array.from(client.db.rounds.iter()).map(convertRound)
-    console.log(`📥 [${mode.toUpperCase()}] Initial rounds loaded:`, initialRounds)
+    console.log(`📥 [${modeLabel}] Initial rounds loaded:`, initialRounds)
     setRounds(initialRounds)
 
     return () => {
-      unsubscribe()
-      unsubscribeUpdate()
+      if (typeof unsubscribe === 'function') unsubscribe()
+      if (typeof unsubscribeUpdate === 'function') unsubscribeUpdate()
     }
-  }, [client, mode])
+  }, [client])
 
   // ===========================================
   // Subscribe to guesses table
@@ -275,25 +265,25 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   useEffect(() => {
     if (!client) return
 
-    console.log(`📊 [${mode.toUpperCase()}] Subscribing to guesses table...`)
+    console.log(`📊 [${modeLabel}] Subscribing to guesses table...`)
 
-    const unsubscribe = client.db.guesses.onInsert((ctx, row) => {
+    const unsubscribe: (() => void) | undefined = client.db.guesses.onInsert((ctx, row) => {
       const converted = convertGuess(row)
-      console.log(`➕ [${mode.toUpperCase()}] New guess inserted:`, converted)
+      console.log(`➕ [${modeLabel}] New guess inserted:`, converted)
       setGuesses(prev => {
         const exists = prev.find(g => g.id === converted.id)
         if (exists) return prev
         return [...prev, converted]
       })
-    })
+    }) as unknown as () => void
 
     // Load initial data
     const initialGuesses = Array.from(client.db.guesses.iter()).map(convertGuess)
-    console.log(`📥 [${mode.toUpperCase()}] Initial guesses loaded:`, initialGuesses.length, 'guesses')
+    console.log(`📥 [${modeLabel}] Initial guesses loaded:`, initialGuesses.length, 'guesses')
     setGuesses(initialGuesses)
 
-    return unsubscribe
-  }, [client, mode])
+    return typeof unsubscribe === 'function' ? unsubscribe : undefined
+  }, [client])
 
   // ===========================================
   // Subscribe to logs table
@@ -314,7 +304,7 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
     const initialLogs = Array.from(client.db.logs.iter()).map(convertLog)
     setLogs(initialLogs)
 
-    return unsubscribe
+    return typeof unsubscribe === 'function' ? unsubscribe : undefined
   }, [client])
 
   // ===========================================
@@ -323,25 +313,25 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   useEffect(() => {
     if (!client) return
 
-    console.log(`📊 [${mode.toUpperCase()}] Subscribing to chat messages table...`)
+    console.log(`📊 [${modeLabel}] Subscribing to chat messages table...`)
 
-    const unsubscribe = client.db.chatMessages.onInsert((ctx, row) => {
+    const unsubscribe: (() => void) | undefined = client.db.chatMessages.onInsert((ctx, row) => {
       const converted = convertChatMsg(row)
-      console.log(`➕ [${mode.toUpperCase()}] New chat message:`, converted)
+      console.log(`➕ [${modeLabel}] New chat message:`, converted)
       setChatMessages(prev => {
         const exists = prev.find(c => c.id === converted.id)
         if (exists) return prev
         return [converted, ...prev].slice(0, 100)
       })
-    })
+    }) as unknown as () => void
 
     // Load initial data
     const initialChat = Array.from(client.db.chatMessages.iter()).map(convertChatMsg)
-    console.log(`📥 [${mode.toUpperCase()}] Initial chat messages loaded:`, initialChat.length, 'messages')
+    console.log(`📥 [${modeLabel}] Initial chat messages loaded:`, initialChat.length, 'messages')
     setChatMessages(initialChat.sort((a, b) => b.timestamp - a.timestamp).slice(0, 100))
 
     return unsubscribe
-  }, [client, mode])
+  }, [client])
 
   // ===========================================
   // Subscribe to prize config table
@@ -349,59 +339,59 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   useEffect(() => {
     if (!client) return
 
-    console.log(`📊 [${mode.toUpperCase()}] Subscribing to prize config table...`)
+    console.log(`📊 [${modeLabel}] Subscribing to prize config table...`)
 
-    const unsubscribe = client.db.prizeConfigs.onInsert((ctx, row) => {
+    const unsubscribe: (() => void) | undefined = client.db.prizeConfig.onInsert((ctx, row) => {
       const converted = convertPrizeConfig(row)
-      console.log(`➕ [${mode.toUpperCase()}] New prize config:`, converted)
+      console.log(`➕ [${modeLabel}] New prize config:`, converted)
       setPrizeConfig(converted)
-    })
+    }) as unknown as () => void
 
-    const unsubscribeUpdate = client.db.prizeConfigs.onUpdate((ctx, oldRow, newRow) => {
+    const unsubscribeUpdate: (() => void) | undefined = client.db.prizeConfig.onUpdate((ctx, oldRow, newRow) => {
       const converted = convertPrizeConfig(newRow)
-      console.log(`🔄 [${mode.toUpperCase()}] Prize config updated:`, converted)
+      console.log(`🔄 [${modeLabel}] Prize config updated:`, converted)
       setPrizeConfig(converted)
-    })
+    }) as unknown as () => void
 
     // Load initial data
-    const initialConfigs = Array.from(client.db.prizeConfigs.iter()).map(convertPrizeConfig)
+    const initialConfigs = Array.from(client.db.prizeConfig.iter()).map(convertPrizeConfig)
     if (initialConfigs.length > 0) {
-      console.log(`📥 [${mode.toUpperCase()}] Initial prize config loaded:`, initialConfigs[0])
+      console.log(`📥 [${modeLabel}] Initial prize config loaded:`, initialConfigs[0])
       setPrizeConfig(initialConfigs[0])
     }
 
     return () => {
-      unsubscribe()
-      unsubscribeUpdate()
+      if (typeof unsubscribe === 'function') unsubscribe()
+      if (typeof unsubscribeUpdate === 'function') unsubscribeUpdate()
     }
-  }, [client, mode])
+  }, [client])
 
   // ===========================================
   // REDUCERS / ACTIONS
   // ===========================================
 
-  const createRound = useCallback(async (roundNumber: number, startTime: number, endTime: number, prize: string, blockNumber?: number, duration?: number): Promise<void> => {
-    console.log(`🎮 [${mode.toUpperCase()}] createRound called`, { roundNumber, startTime, endTime, prize, blockNumber, duration, connected, hasClient: !!client })
-    
+  const createRound = useCallback(async (roundNumber: number, _startTime: number, _endTime: number, prize: string, blockNumber?: number, duration?: number): Promise<void> => {
+    console.log(`🎮 [${modeLabel}] createRound called`, { roundNumber, prize, blockNumber, duration, connected, hasClient: !!client })
+
     if (!client || !connected) {
       const error = 'Not connected to database'
       console.error('❌', error)
       throw new Error(error)
     }
-    
+
     try {
       const roundNumBigInt = BigInt(roundNumber)
       const durationMinutes = BigInt(duration || 10)
-      const blockNumBigInt = blockNumber !== undefined ? BigInt(blockNumber) : null
-      
-      console.log(`📤 [${mode.toUpperCase()}] Creating round...`, { roundNumber, durationMinutes: durationMinutes.toString(), prize, blockNumber })
+      const blockNumBigInt = blockNumber !== undefined ? BigInt(blockNumber) : undefined
+
+      console.log(`📤 [${modeLabel}] Creating round...`, { roundNumber, durationMinutes: durationMinutes.toString(), prize, blockNumber })
       client.reducers.createRound(roundNumBigInt, durationMinutes, prize, blockNumBigInt)
-      console.log(`✅ [${mode.toUpperCase()}] Round created successfully!`)
+      console.log(`✅ [${modeLabel}] Round created successfully!`)
     } catch (error) {
-      console.error(`❌ [${mode.toUpperCase()}] Failed to create round:`, error)
+      console.error(`❌ [${modeLabel}] Failed to create round:`, error)
       throw error
     }
-  }, [client, connected, mode])
+  }, [client, connected])
 
   const submitGuess = useCallback(async (
     roundId: string, 
@@ -411,25 +401,25 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
     pfpUrl: string
   ): Promise<boolean> => {
     if (!client || !connected) {
-      console.warn(`⚠️ [${mode.toUpperCase()}] Not connected`)
+      console.warn(`⚠️ [${modeLabel}] Not connected`)
       return false
     }
 
     const round = rounds.find(r => r.id === roundId)
     if (!round || round.status !== 'open') {
-      console.warn(`⚠️ [${mode.toUpperCase()}] Round not open:`, { roundId, status: round?.status })
+      console.warn(`⚠️ [${modeLabel}] Round not open:`, { roundId, status: round?.status })
       return false
     }
 
     const now = Date.now()
     if (now >= round.endTime) {
-      console.warn(`⚠️ [${mode.toUpperCase()}] Round time expired`)
+      console.warn(`⚠️ [${modeLabel}] Round time expired`)
       return false
     }
 
     const hasGuessed = guesses.some(g => g.roundId === roundId && g.address.toLowerCase() === address.toLowerCase())
     if (hasGuessed) {
-      console.warn(`⚠️ [${mode.toUpperCase()}] User already guessed`)
+      console.warn(`⚠️ [${modeLabel}] User already guessed`)
       return false
     }
 
@@ -446,35 +436,35 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
         pfpUrl || undefined
       )
       
-      console.log(`✅ [${mode.toUpperCase()}] Guess submitted!`)
+      console.log(`✅ [${modeLabel}] Guess submitted!`)
       return true
     } catch (error) {
-      console.error(`❌ [${mode.toUpperCase()}] Failed to submit guess:`, error)
+      console.error(`❌ [${modeLabel}] Failed to submit guess:`, error)
       return false
     }
-  }, [client, connected, rounds, guesses, mode])
+  }, [client, connected, rounds, guesses])
 
   const endRound = useCallback(async (roundId: string): Promise<boolean> => {
     if (!client || !connected) {
-      console.warn(`⚠️ [${mode.toUpperCase()}] Not connected`)
+      console.warn(`⚠️ [${modeLabel}] Not connected`)
       return false
     }
 
     const round = rounds.find(r => r.id === roundId)
     if (!round || round.status !== 'open') {
-      console.warn(`⚠️ [${mode.toUpperCase()}] Round not open:`, { roundId, status: round?.status })
+      console.warn(`⚠️ [${modeLabel}] Round not open:`, { roundId, status: round?.status })
       return false
     }
 
     try {
       client.reducers.endRoundManually(BigInt(roundId))
-      console.log(`✅ [${mode.toUpperCase()}] Round ended!`)
+      console.log(`✅ [${modeLabel}] Round ended!`)
       return true
     } catch (error) {
-      console.error(`❌ [${mode.toUpperCase()}] Failed to end round:`, error)
+      console.error(`❌ [${modeLabel}] Failed to end round:`, error)
       return false
     }
-  }, [client, connected, rounds, mode])
+  }, [client, connected, rounds])
 
   const updateRoundResult = useCallback(async (
     roundId: string, 
@@ -497,8 +487,8 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
       winningAddressBigInt
     )
     
-    console.log(`✅ [${mode.toUpperCase()}] Round result updated!`)
-  }, [client, connected, mode])
+    console.log(`✅ [${modeLabel}] Round result updated!`)
+  }, [client, connected])
 
   const getGuessesForRound = useCallback((roundId: string): Guess[] => {
     return guesses.filter(g => g.roundId === roundId)
@@ -509,16 +499,16 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
   }, [guesses])
 
   const addChatMessage = useCallback(async (message: ChatMessage): Promise<void> => {
-    console.log(`💬 [${mode.toUpperCase()}] addChatMessage called`, { message, connected, hasClient: !!client })
+    console.log(`💬 [${modeLabel}] addChatMessage called`, { message, connected, hasClient: !!client })
     
     if (!client || !connected) {
       const warning = 'Not connected to database'
-      console.warn(`⚠️ [${mode.toUpperCase()}]`, warning)
+      console.warn(`⚠️ [${modeLabel}]`, warning)
       throw new Error(warning)
     }
     
     try {
-      console.log(`📤 [${mode.toUpperCase()}] Sending chat message...`)
+      console.log(`📤 [${modeLabel}] Sending chat message...`)
       
       client.reducers.sendChatMessage(
         message.roundId,
@@ -528,12 +518,12 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
         message.pfpUrl || '',
         message.type
       )
-      console.log(`✅ [${mode.toUpperCase()}] Chat message sent!`)
+      console.log(`✅ [${modeLabel}] Chat message sent!`)
     } catch (error) {
-      console.error(`❌ [${mode.toUpperCase()}] Failed to send chat message:`, error)
+      console.error(`❌ [${modeLabel}] Failed to send chat message:`, error)
       throw error
     }
-  }, [client, connected, mode])
+  }, [client, connected])
 
   // Auto-close rounds when end time is reached
   useEffect(() => {
@@ -567,7 +557,6 @@ export function GameProvider({ children }: { children: ReactNode }): JSX.Element
     hasUserGuessed,
     addChatMessage,
     connected,
-    mode,
     client,
     userFid
   }

@@ -20,13 +20,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       domain: process.env.NEXT_PUBLIC_HOST || 'localhost:3000'
     })
 
+    const FARCASTER_API_KEY = process.env.FARCASTER_API_KEY || ''
     const userResponse = await fetch(
       `https://api.farcaster.xyz/v2/user?fid=${payload.sub}`,
-      {
-        headers: {
-          'api-key': 'wc_secret_13ae99f53a4f0874277616da7b10bddf6d01a2ea5eac4d8c6380e877_9b6b2830'
-        }
-      }
+      FARCASTER_API_KEY
+        ? { headers: { 'api-key': FARCASTER_API_KEY } }
+        : {}
     )
 
     if (!userResponse.ok) {
