@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { useGame, isDevAddress } from '@/context/GameContext'
+import { useGame } from '@/context/GameContext'
 import { useToast } from '@/hooks/use-toast'
 // realtime only
 
@@ -132,10 +132,7 @@ export function AdminPanel(): JSX.Element {
       setLoading(true)
       await createRound(roundNum, now, endTime, prize, blockNum, durationMin)
       
-      // Auto-post to Farcaster
-      const farcasterPrize = `${jackpotAmount} ${prizeCurrency}`
-      const message = `🔔 Round #${roundNum} Started!\n\nGuess how many transactions will be in the next Bitcoin block ⛏️\n\n💰 Jackpot: ${farcasterPrize}\n🎯 Target Block: #${blockNum}\n⏱ Duration: ${durationMin} minutes\n\n#BitcoinBlocks`
-      await handleAnnounce(message)
+      // Announcement removed
       
       toast({
         title: '✅ Round Started',
@@ -274,11 +271,7 @@ export function AdminPanel(): JSX.Element {
 
       await updateRoundResult(closedRound.id, actualTxCount, blockHash, winner.address)
 
-      // Auto-post results to Farcaster
-      const newJackpot = `${jackpotAmount} ${prizeCurrency}`
-      const message = `📊 Block #${closedRound.blockNumber} had ${actualTxCount.toLocaleString()} transactions.\n\n🥇 Winner: @${winner.username}\n🥈 Runner-Up: ${runnerUp ? `@${runnerUp.username}` : 'N/A'}\n\n💰 Jackpot is now: ${newJackpot}\n\n#BitcoinBlocks`
-      
-      await handleAnnounce(message)
+      // Announcement removed
 
       toast({
         title: '🎉 Results Posted!',
@@ -295,31 +288,7 @@ export function AdminPanel(): JSX.Element {
     }
   }
 
-  const handleAnnounce = async (message: string): Promise<void> => {
-    if (!user?.isAdmin) {
-      console.warn('⚠️ Non-admin tried to announce')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/farcaster-announce', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          address: user.address
-        })
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to announce')
-      }
-    } catch (error) {
-      console.error('Announcement error:', error)
-    }
-  }
+  // Farcaster announce feature removed
 
   const handleSavePrizeConfig = async (): Promise<void> => {
     if (!client || !connected) {
@@ -501,7 +470,7 @@ export function AdminPanel(): JSX.Element {
                 <span className="text-xl">🚀</span>
                 <h3 className="text-base font-bold text-white">Start New Round</h3>
               </div>
-              <p className="text-xs text-gray-400">Opens new round for guesses & auto-posts to Farcaster</p>
+              <p className="text-xs text-gray-400">Opens new round for guesses</p>
 
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -547,7 +516,7 @@ export function AdminPanel(): JSX.Element {
                 disabled={loading || !connected}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round & Announce'}
+                {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round'}
               </Button>
               {!connected && (
                 <p className="text-xs text-red-400 mt-2 text-center">
@@ -733,11 +702,7 @@ export function AdminPanel(): JSX.Element {
           </div>
 
           {/* Info Note */}
-          <div className="glass-card-dark p-4 rounded-xl border border-cyan-500/30">
-            <p className="text-sm text-cyan-300">
-              <span className="font-bold">ℹ️ Auto-Announcement:</span> Starting rounds and posting results will automatically announce on Farcaster with formatted messages.
-            </p>
-          </div>
+          {/* Info note removed: Farcaster announcement no longer used */}
         </CardContent>
       </Card>
     </motion.div>
