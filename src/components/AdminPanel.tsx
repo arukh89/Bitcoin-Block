@@ -440,7 +440,7 @@ export function AdminPanel(): JSX.Element {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.9 }}
     >
-      <Card className="glass-card-dark border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/20">
+      <Card className="glass-card-dark border-2 border-yellow-500/50 shadow-2xl shadow-yellow-500/20 shadow-3d">
         <CardHeader className="pb-3 border-b border-yellow-500/30">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -514,7 +514,7 @@ export function AdminPanel(): JSX.Element {
               <Button
                 onClick={handleStartRound}
                 disabled={loading || !connected}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed button-3d"
               >
                 {loading ? '⚙️ Starting...' : !connected ? '🔌 Connecting...' : '🔔 Start Round'}
               </Button>
@@ -593,7 +593,7 @@ export function AdminPanel(): JSX.Element {
                   onClick={handleEndRound}
                   variant="destructive"
                   disabled={loading || !connected || !activeRound || activeRound.status !== 'open'}
-                  className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed button-3d"
                 >
                   {loading ? '⚙️' : '🔒'}
                   <span className="ml-1 text-xs">
@@ -605,7 +605,7 @@ export function AdminPanel(): JSX.Element {
                 <Button
                   onClick={handlePostResults}
                   disabled={loading || !connected || !rounds.find(r => r.status === 'closed')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold h-12 disabled:opacity-50 disabled:cursor-not-allowed button-3d"
                 >
                   {loading ? '⚙️' : '📡'}
                   <span className="ml-1 text-xs">
@@ -688,7 +688,7 @@ export function AdminPanel(): JSX.Element {
               <Button
                 onClick={handleSavePrizeConfig}
                 disabled={loading || !connected}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold h-12"
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-bold h-12 button-3d"
               >
                 {loading ? '⚙️ Saving...' : '💾 Save Prize Configuration'}
               </Button>

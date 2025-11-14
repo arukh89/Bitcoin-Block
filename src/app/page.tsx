@@ -253,7 +253,7 @@ export default function Home(): JSX.Element {
               >
                 <Button
                   onClick={() => setShowAdminPanel(!showAdminPanel)}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold px-6 py-3 shadow-2xl shadow-yellow-500/30"
+                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold px-6 py-3 shadow-2xl shadow-yellow-500/30 button-3d"
                 >
                   {showAdminPanel ? '🔼 Hide Admin Panel' : '🛠️ Show Admin Panel'}
                 </Button>

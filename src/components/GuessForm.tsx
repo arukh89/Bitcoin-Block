@@ -177,7 +177,7 @@ export function GuessForm(): JSX.Element {
             <>
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 text-base font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed button-3d"
                 disabled={loading || isRoundLocked || !connected || alreadyGuessed}
               >
                 {loading ? (

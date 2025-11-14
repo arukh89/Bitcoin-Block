@@ -62,7 +62,7 @@ export function AuthButton(): JSX.Element {
       >
         <Button 
           onClick={handleConnect}
-          className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold shadow-lg"
+          className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white font-bold shadow-lg button-3d"
         >
           🔗 Connect
         </Button>

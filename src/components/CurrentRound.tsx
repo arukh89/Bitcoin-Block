@@ -103,7 +103,7 @@ export function CurrentRound(): JSX.Element {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.35 }}
       >
-        <Card className="glass-card-dark border-orange-500/30 overflow-hidden">
+        <Card className="glass-card-dark border-orange-500/30 overflow-hidden shadow-3d">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-orange-500 animate-pulse" />
           <CardContent className="py-6 px-6">
             <motion.div
@@ -127,7 +127,7 @@ export function CurrentRound(): JSX.Element {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.35 }}
       >
-        <Card className="glass-card-dark border-gray-500/30 overflow-hidden">
+        <Card className="glass-card-dark border-gray-500/30 overflow-hidden shadow-3d">
           <CardContent className="py-8 px-6">
             <motion.div
               className="text-center"
@@ -153,7 +153,7 @@ export function CurrentRound(): JSX.Element {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.35 }}
     >
-      <Card className="glass-card-dark border-orange-500/30 overflow-hidden">
+      <Card className="glass-card-dark border-orange-500/30 overflow-hidden shadow-3d">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-orange-500 animate-pulse" />
         
         <CardContent className="py-6 px-6">
