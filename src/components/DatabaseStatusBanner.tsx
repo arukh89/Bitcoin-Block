@@ -2,33 +2,23 @@
 
 import { useGame } from '@/context/GameContext'
 import { Badge } from '@/components/ui/badge'
-import { APP_CONFIG } from '@/config/app-config'
+// realtime only
 
 export function DatabaseStatusBanner(): JSX.Element {
-  const { connected, mode } = useGame()
+  const { connected } = useGame()
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Badge 
-            variant="outline" 
-            className={`${
-              mode === 'mock' 
-                ? 'bg-blue-500/20 text-blue-300 border-blue-400/50' 
-                : 'bg-purple-500/20 text-purple-300 border-purple-400/50'
-            } px-3 py-1.5 text-xs font-bold`}
+          <Badge
+            variant="outline"
+            className="bg-purple-500/20 text-purple-300 border-purple-400/50 px-3 py-1.5 text-xs font-bold"
           >
-            {mode === 'mock' ? '🧪 MOCK MODE' : '🔴 REAL-TIME MODE'}
+            🔴 REAL-TIME MODE
           </Badge>
           
-          <div className="text-xs text-gray-400">
-            {mode === 'mock' ? (
-              <span>Testing with simulated data</span>
-            ) : (
-              <span>Connected to live Bitcoin network</span>
-            )}
-          </div>
+          <div className="text-xs text-gray-400">Connected to live Bitcoin network</div>
         </div>
 
         <Badge 

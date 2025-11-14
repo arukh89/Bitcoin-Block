@@ -4,8 +4,8 @@ import { DbConnection, type RemoteTables, type RemoteReducers } from '@/spacetim
 // SpacetimeDB connection settings
 // IMPORTANT: Module must be published to testnet first using SpacetimeDB CLI
 // Instructions: See DEPLOYMENT_GUIDE.md
-const SPACETIME_HOST = process.env.NEXT_PUBLIC_SPACETIME_HOST || 'wss://testnet.spacetimedb.com'
-const SPACETIME_DB_NAME = process.env.NEXT_PUBLIC_SPACETIME_DB_NAME || 'bitcoin-blocks'
+const SPACETIME_HOST = process.env.NEXT_PUBLIC_SPACETIME_HOST || ''
+const SPACETIME_DB_NAME = process.env.NEXT_PUBLIC_SPACETIME_DB_NAME || ''
 
 let dbConnection: DbConnection | null = null
 let isConnecting = false

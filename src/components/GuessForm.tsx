@@ -88,7 +88,7 @@ export function GuessForm(): JSX.Element {
 
     try {
       setLoading(true)
-      const success = await submitGuess(activeRound.id, user.address, user.username, guessNum, user.pfpUrl)
+      const success = await submitGuess(activeRound.id, user.address, user.username, guessNum, user.pfpUrl || '')
       
       if (success) {
         toast({
